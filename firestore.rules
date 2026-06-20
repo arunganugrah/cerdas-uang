@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Setiap user hanya bisa akses datanya sendiri
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Transaksi bisa membawa foto struk sebagai base64 (lihat
+      // src/utils/imageCompress.js). Firestore membatasi 1 dokumen maksimal
+      // 1MB, jadi kita jaga dengan validasi tambahan di sini sebagai pengaman
+      // kedua (pengaman pertama adalah kompresi di sisi aplikasi).
+      match /transactions/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth != null && request.auth.uid == userId
+                      && request.resource.size() < 900000;
+      }
+
+      match /{collection}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

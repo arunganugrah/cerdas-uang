@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+
+  * { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    @apply bg-cu-bg text-cu-text antialiased select-none;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    overscroll-behavior: none;
+    min-height: 100dvh;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-cu-muted rounded-full; }
+
+  input, textarea, select {
+    @apply outline-none;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-cu-card border border-cu-border rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-medium rounded-xl px-4 py-2.5 transition-all duration-150 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-cu-surface hover:bg-cu-border text-cu-text font-medium rounded-xl px-4 py-2.5 transition-all duration-150 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply hover:bg-cu-surface text-cu-subtext hover:text-cu-text rounded-xl px-3 py-2 transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium rounded-xl px-4 py-2.5 transition-all;
+  }
+
+  .input-field {
+    @apply bg-cu-surface border border-cu-border rounded-xl px-4 py-3 text-cu-text placeholder:text-cu-muted focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all w-full;
+  }
+
+  .badge-income { @apply bg-emerald-500/15 text-emerald-400 text-xs font-medium px-2 py-0.5 rounded-full; }
+  .badge-expense { @apply bg-rose-500/15 text-rose-400 text-xs font-medium px-2 py-0.5 rounded-full; }
+  .badge-transfer { @apply bg-blue-500/15 text-blue-400 text-xs font-medium px-2 py-0.5 rounded-full; }
+
+  .amount-income { @apply text-emerald-400 font-semibold font-mono; }
+  .amount-expense { @apply text-rose-400 font-semibold font-mono; }
+  .amount-transfer { @apply text-blue-400 font-semibold font-mono; }
+
+  .tab-active { @apply text-emerald-400 border-b-2 border-emerald-400; }
+
+  .glass {
+    @apply bg-cu-surface/80 backdrop-blur-xl border border-cu-border/50;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-150 text-cu-muted;
+  }
+  .nav-item.active {
+    @apply text-emerald-400;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
+
+/* Bottom nav safe area */
+.bottom-nav {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Full height for mobile */
+.h-screen-safe {
+  height: 100dvh;
+}
+
+/* Smooth scroll */
+.scroll-smooth { scroll-behavior: smooth; }
+
+/* Chart tooltip */
+.recharts-tooltip-wrapper { @apply !shadow-2xl; }
+
+/* Calendar view */
+.calendar-day { @apply w-9 h-9 flex items-center justify-center rounded-lg text-sm; }
+.calendar-day.has-txn { @apply font-medium; }
+.calendar-day.selected { @apply bg-emerald-500 text-white; }
+
+/* Swipe actions */
+.swipe-container { overflow: hidden; position: relative; }
+.swipe-actions { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; }
+
+/* Custom amount input */
+.amount-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(28px, 8vw, 48px);
+  letter-spacing: -0.02em;
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+.progress-animated { animation: progress-fill 0.8s ease-out; }
+
+/* Notification badge */
+.notif-badge {
+  @apply absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold;
+}
