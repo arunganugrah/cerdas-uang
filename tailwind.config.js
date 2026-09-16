@@ -11,18 +11,18 @@ export default {
           600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b'
         },
         cu: {
-          bg: '#0f172a',
-          surface: '#1e293b',
-          card: '#1e293b',
-          border: '#334155',
-          muted: '#475569',
-          text: '#f1f5f9',
-          subtext: '#94a3b8',
-          income: '#10b981',
-          expense: '#f43f5e',
-          transfer: '#60a5fa',
-          accent: '#10b981'
-        }
+  bg: '#f8fafc',
+  surface: '#ffffff',
+  card: '#ffffff',
+  border: '#e2e8f0',
+  muted: '#94a3b8',
+  text: '#0f172a',
+  subtext: '#475569',
+  income: '#059669',
+  expense: '#e11d48',
+  transfer: '#2563eb',
+  accent: '#10b981'
+}
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],

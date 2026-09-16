@@ -13,7 +13,7 @@ export const useStore = create(
       setUser: (user) => set({ user }),
 
       // ─── UI ─────────────────────────────────────────────
-      theme: 'dark',
+      theme: 'light',
       language: 'id',
       toggleTheme: () => set(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
       activeTab: 'dashboard',
@@ -130,6 +130,17 @@ export const useStore = create(
         await localDB.accounts.update(id, { isArchived: true })
         set(s => ({ accounts: s.accounts.map(a => a.id === id ? { ...a, isArchived: true } : a) }))
       },
+      updateAccount: async (id, updates) => {
+        await localDB.accounts.update(id, updates)
+        set(s => ({
+          accounts: s.accounts.map(a => a.id === id ? { ...a, ...updates } : a)
+        }))
+      },
+
+      deleteAccount: async (id) => {
+        await localDB.accounts.delete(id)
+        set(s => ({ accounts: s.accounts.filter(a => a.id !== id) }))
+      },
 
       // ─── BUDGETS ─────────────────────────────────────────
       addBudget: async (budgetData) => {
@@ -137,6 +148,17 @@ export const useStore = create(
         const id = await pushBudget(user?.uid || 'local', budgetData)
         set(s => ({ budgets: [...s.budgets, { ...budgetData, id, spent: 0 }] }))
         return id
+      },
+      updateBudget: async (id, updates) => {
+        await localDB.budgets.update(id, updates)
+        set(s => ({
+          budgets: s.budgets.map(b => b.id === id ? { ...b, ...updates } : b)
+        }))
+      },
+
+      deleteBudget: async (id) => {
+        await localDB.budgets.delete(id)
+        set(s => ({ budgets: s.budgets.filter(b => b.id !== id) }))
       },
 
       // ─── GOALS ───────────────────────────────────────────
@@ -153,6 +175,22 @@ export const useStore = create(
         set(s => ({
           goals: s.goals.map(g => g.id === goalId ? { ...g, saved: (g.saved || 0) + amount } : g),
           goalDeposits: [...s.goalDeposits, deposit]
+        }))
+      },
+      updateGoal: async (id, updates) => {
+        await localDB.goals.update(id, updates)
+        set(s => ({
+          goals: s.goals.map(g => g.id === id ? { ...g, ...updates } : g)
+        }))
+      },
+
+      deleteGoal: async (id) => {
+        await localDB.goals.delete(id)
+        // Hapus juga deposit terkait
+        await localDB.goalDeposits.where('goalId').equals(id).delete()
+        set(s => ({
+          goals: s.goals.filter(g => g.id !== id),
+          goalDeposits: s.goalDeposits.filter(d => d.goalId !== id)
         }))
       },
 

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useStore } from '../stores/useStore'
 import { formatRupiah } from '../utils/nlp'
-import { Plus, X, Target } from 'lucide-react'
+import { Plus, X, Target, Edit3, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 
 export default function BudgetPage() {
-  const { budgets, categories, addBudget } = useStore()
+  const { budgets, categories, addBudget, updateBudget, deleteBudget } = useStore()
   const [showAdd, setShowAdd] = useState(false)
   const [period, setPeriod] = useState('monthly')
   const [form, setForm] = useState({ categoryId: '', amount: '', period: 'monthly', rollover: false })
+  const [editBudget, setEditBudget] = useState(null)
+  const [editForm, setEditForm] = useState(null)
 
   const activeBudgets = budgets.filter(b => b.period === period)
   const totalBudgeted = activeBudgets.reduce((s, b) => s + b.amount, 0)
@@ -24,6 +26,24 @@ export default function BudgetPage() {
     toast.success('Budget berhasil ditambahkan!')
     setShowAdd(false)
     setForm({ categoryId: '', amount: '', period: 'monthly', rollover: false })
+  }
+  const handleEdit = async () => {
+    if (!editForm.amount) return toast.error('Masukkan batas budget')
+    await updateBudget(editBudget.id, {
+      amount: Number(editForm.amount),
+      period: editForm.period,
+      rollover: editForm.rollover
+    })
+    toast.success('Budget berhasil diperbarui!')
+    setEditBudget(null)
+    setEditForm(null)
+  }
+
+  const handleDelete = async (budget) => {
+    const cat = categories.find(c => c.id === budget.categoryId)
+    if (!confirm(`Hapus budget "${cat?.name || 'ini'}"?`)) return
+    await deleteBudget(budget.id)
+    toast.success('Budget dihapus')
   }
 
   const getStatus = (pct) => {
@@ -114,10 +134,25 @@ export default function BudgetPage() {
               </div>
 
               {remaining < 0 && (
-                <div className="mt-2 text-xs text-rose-400 bg-rose-500/10 rounded-lg px-3 py-2">
-                  ⚠️ Melebihi budget sebesar {formatRupiah(Math.abs(remaining), true)}
-                </div>
+                <>
+                  <div className="mt-2 text-xs text-rose-400 bg-rose-500/10 rounded-lg px-3 py-2">
+                    ⚠️ Melebihi budget sebesar {formatRupiah(Math.abs(remaining), true)}
+                  </div>
+                </>
               )}
+              {/* Tombol edit dan hapus */}
+              <div className="flex gap-2 mt-3 pt-3 border-t border-cu-border">
+                <button
+                  onClick={() => { setEditBudget(b); setEditForm({ amount: String(b.amount), period: b.period, rollover: b.rollover || false }) }}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-blue-500 bg-blue-50 hover:bg-blue-100 transition-all">
+                  <Edit3 size={13} /> Edit Budget
+                </button>
+                <button
+                  onClick={() => handleDelete(b)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-rose-500 bg-rose-50 hover:bg-rose-100 transition-all">
+                  <Trash2 size={13} /> Hapus
+                </button>
+              </div>
             </div>
           )
         })}
@@ -177,4 +212,61 @@ export default function BudgetPage() {
       )}
     </div>
   )
+  {/* Edit Budget Modal */}
+{editBudget && editForm && (
+  <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      onClick={() => { setEditBudget(null); setEditForm(null) }} />
+    <div className="relative w-full max-w-lg bg-cu-surface rounded-t-3xl border border-cu-border p-6 animate-slide-up">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-semibold text-cu-text text-lg">Edit Budget</h3>
+        <button onClick={() => { setEditBudget(null); setEditForm(null) }}>
+          <X size={18} className="text-cu-muted" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <label className="text-cu-subtext text-xs mb-1 block">
+            Kategori: <strong className="text-cu-text">
+              {categories.find(c => c.id === editBudget.categoryId)?.name}
+            </strong>
+          </label>
+        </div>
+        <div>
+          <label className="text-cu-subtext text-xs mb-1 block">Batas Budget Baru (Rp)</label>
+          <input type="number"
+            value={editForm.amount}
+            onChange={e => setEditForm(f => ({ ...f, amount: e.target.value }))}
+            className="input-field"
+            autoFocus />
+        </div>
+        <div>
+          <label className="text-cu-subtext text-xs mb-1 block">Periode</label>
+          <div className="flex gap-2">
+            {[{v:'monthly',l:'Bulanan'},{v:'yearly',l:'Tahunan'}].map(({v,l}) => (
+              <button key={v}
+                onClick={() => setEditForm(f => ({ ...f, period: v }))}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${editForm.period===v ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-cu-border text-cu-muted'}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div onClick={() => setEditForm(f => ({ ...f, rollover: !f.rollover }))}
+            className={`w-11 h-6 rounded-full transition-all relative ${editForm.rollover ? 'bg-emerald-500' : 'bg-cu-border'}`}>
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${editForm.rollover ? 'left-6' : 'left-1'}`} />
+          </div>
+          <span className="text-cu-text text-sm">Rollover sisa budget</span>
+        </label>
+      </div>
+      <div className="flex gap-3 mt-6">
+        <button onClick={() => { setEditBudget(null); setEditForm(null) }}
+          className="btn-secondary flex-1">Batal</button>
+        <button onClick={handleEdit}
+          className="btn-primary flex-1">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+)}
 }

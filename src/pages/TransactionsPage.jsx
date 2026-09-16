@@ -90,17 +90,16 @@ export default function TransactionsPage() {
             </div>
           )}
         </div>
-        <div className="text-right flex-shrink-0">
-          <div className={`font-semibold font-mono ${compact ? 'text-xs' : 'text-sm'} ${txn.type === 'income' ? 'text-emerald-400' : txn.type === 'transfer' ? 'text-blue-400' : 'text-rose-400'}`}>
-            {txn.type === 'income' ? '+' : txn.type === 'transfer' ? '→' : '-'}{formatRupiah(txn.amount, true)}
-          </div>
-        </div>
-        <div className="hidden group-hover:flex gap-1 ml-1">
-          <button onClick={() => setEditTxn(txn)} className="p-1.5 hover:bg-cu-bg rounded-lg text-cu-muted hover:text-emerald-400 transition-all">
-            <Edit3 size={13} />
+        <div className="flex gap-1 ml-1 flex-shrink-0">
+          <button onClick={() => setEditTxn(txn)} 
+            className="p-2 hover:bg-emerald-50 rounded-lg text-slate-400 
+                      hover:text-emerald-500 transition-all active:scale-95">
+            <Edit3 size={15} />
           </button>
-          <button onClick={() => handleDelete(txn)} className="p-1.5 hover:bg-rose-500/10 rounded-lg text-cu-muted hover:text-rose-400 transition-all">
-            <Trash2 size={13} />
+          <button onClick={() => handleDelete(txn)} 
+            className="p-2 hover:bg-rose-50 rounded-lg text-slate-400 
+                      hover:text-rose-500 transition-all active:scale-95">
+            <Trash2 size={15} />
           </button>
         </div>
       </div>

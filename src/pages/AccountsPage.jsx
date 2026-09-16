@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../stores/useStore'
 import { formatRupiah } from '../utils/nlp'
-import { Plus, Archive, RefreshCw, ChevronRight, X, CreditCard, Wallet, Smartphone, TrendingUp, Banknote } from 'lucide-react'
+import { Plus, Archive, RefreshCw, ChevronRight, X, CreditCard, Wallet, Smartphone, TrendingUp, Banknote, Edit3, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const ACCOUNT_TYPES = [
@@ -16,11 +16,13 @@ const ICONS = ['👛','🏦','💚','💜','💰','💳','🏧','💎','🪙','�
 const COLORS = ['#f59e0b','#3b82f6','#8b5cf6','#ef4444','#10b981','#f97316','#ec4899','#14b8a6','#64748b']
 
 export default function AccountsPage() {
-  const { accounts, addAccount, archiveAccount, updateAccountBalance } = useStore()
+  const { accounts, addAccount, archiveAccount, updateAccountBalance, updateAccount, deleteAccount } = useStore()
   const [showAdd, setShowAdd] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [reconcileAcc, setReconcileAcc] = useState(null)
   const [reconcileBalance, setReconcileBalance] = useState('')
+  const [editAcc, setEditAcc] = useState(null)
+  const [editForm, setEditForm] = useState(null)
   const [form, setForm] = useState({ name: '', type: 'bank', icon: '🏦', color: '#3b82f6', balance: '', currency: 'IDR', bankName: '', creditLimit: '', dueDate: '' })
 
   const active = accounts.filter(a => !a.isArchived)
@@ -33,6 +35,26 @@ export default function AccountsPage() {
     toast.success('Akun berhasil ditambahkan!')
     setShowAdd(false)
     setForm({ name: '', type: 'bank', icon: '🏦', color: '#3b82f6', balance: '', currency: 'IDR', bankName: '', creditLimit: '', dueDate: '' })
+  }
+  const handleEdit = async () => {
+    if (!editForm.name.trim()) return toast.error('Nama akun wajib diisi')
+    await updateAccount(editAcc.id, {
+      name: editForm.name,
+      icon: editForm.icon,
+      color: editForm.color,
+      bankName: editForm.bankName || '',
+      creditLimit: editForm.creditLimit || '',
+      dueDate: editForm.dueDate || ''
+    })
+    toast.success('Akun berhasil diperbarui!')
+    setEditAcc(null)
+    setEditForm(null)
+  }
+
+  const handleDelete = async (acc) => {
+    if (!confirm(`Hapus akun "${acc.name}"? Transaksi terkait tidak akan ikut terhapus.`)) return
+    await deleteAccount(acc.id)
+    toast.success(`Akun "${acc.name}" dihapus`)
   }
 
   const handleReconcile = async () => {
@@ -50,6 +72,7 @@ export default function AccountsPage() {
   })).filter(t => t.accounts.length > 0)
 
   return (
+    <>
     <div className="px-4 py-4 pb-8 space-y-5">
       {/* Net worth header */}
       <div className="card p-5 bg-gradient-to-br from-blue-900/30 to-cu-surface border-blue-800/30">
@@ -87,11 +110,29 @@ export default function AccountsPage() {
                     {formatRupiah(acc.balance || 0, true)}
                   </div>
                   <div className="flex gap-2 mt-1 justify-end">
-                    <button onClick={() => { setReconcileAcc(acc); setReconcileBalance(String(acc.balance || 0)) }} className="text-cu-muted hover:text-emerald-400 transition-all" title="Rekonsiliasi">
+                    <button
+                      onClick={() => { setReconcileAcc(acc); setReconcileBalance(String(acc.balance || 0)) }}
+                      className="text-cu-muted hover:text-emerald-500 transition-all p-1"
+                      title="Rekonsiliasi">
                       <RefreshCw size={14} />
                     </button>
-                    <button onClick={() => archiveAccount(acc.id)} className="text-cu-muted hover:text-amber-400 transition-all" title="Arsip">
+                    <button
+                      onClick={() => { setEditAcc(acc); setEditForm({ name: acc.name, icon: acc.icon, color: acc.color, bankName: acc.bankName || '', creditLimit: acc.creditLimit || '', dueDate: acc.dueDate || '' }) }}
+                      className="text-cu-muted hover:text-blue-500 transition-all p-1"
+                      title="Edit akun">
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => archiveAccount(acc.id)}
+                      className="text-cu-muted hover:text-amber-500 transition-all p-1"
+                      title="Arsip">
                       <Archive size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(acc)}
+                      className="text-cu-muted hover:text-rose-500 transition-all p-1"
+                      title="Hapus">
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -243,5 +284,92 @@ export default function AccountsPage() {
         </div>
       )}
     </div>
+    {/* Edit Account Modal */}
+{editAcc && editForm && (
+  <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      onClick={() => { setEditAcc(null); setEditForm(null) }} />
+    <div className="relative w-full max-w-lg bg-cu-surface rounded-t-3xl border border-cu-border p-6 max-h-[85vh] overflow-y-auto animate-slide-up">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-semibold text-cu-text text-lg">Edit Akun</h3>
+        <button onClick={() => { setEditAcc(null); setEditForm(null) }}>
+          <X size={18} className="text-cu-muted" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        {/* Nama */}
+        <div>
+          <label className="text-cu-subtext text-xs mb-1 block">Nama Akun *</label>
+          <input
+            value={editForm.name}
+            onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+            className="input-field" />
+        </div>
+        {/* Icon */}
+        <div>
+          <label className="text-cu-subtext text-xs mb-2 block">Ikon</label>
+          <div className="flex flex-wrap gap-2">
+            {ICONS.map(ic => (
+              <button key={ic}
+                onClick={() => setEditForm(f => ({ ...f, icon: ic }))}
+                className={`w-10 h-10 rounded-xl text-xl transition-all ${editForm.icon === ic ? 'bg-emerald-500/20 border-2 border-emerald-500' : 'bg-cu-bg hover:bg-cu-border'}`}>
+                {ic}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Warna */}
+        <div>
+          <label className="text-cu-subtext text-xs mb-2 block">Warna</label>
+          <div className="flex gap-2 flex-wrap">
+            {COLORS.map(c => (
+              <button key={c}
+                onClick={() => setEditForm(f => ({ ...f, color: c }))}
+                className={`w-8 h-8 rounded-full transition-all ${editForm.color === c ? 'ring-2 ring-offset-2 ring-offset-cu-surface ring-emerald-500 scale-110' : ''}`}
+                style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </div>
+        {/* Bank name jika berlaku */}
+        {(editAcc.type === 'bank' || editAcc.type === 'credit') && (
+          <div>
+            <label className="text-cu-subtext text-xs mb-1 block">Nama Bank</label>
+            <input
+              value={editForm.bankName}
+              onChange={e => setEditForm(f => ({ ...f, bankName: e.target.value }))}
+              placeholder="BCA, Mandiri..."
+              className="input-field" />
+          </div>
+        )}
+        {/* Jatuh tempo jika kartu kredit */}
+        {editAcc.type === 'credit' && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-cu-subtext text-xs mb-1 block">Limit Kartu</label>
+              <input type="number"
+                value={editForm.creditLimit}
+                onChange={e => setEditForm(f => ({ ...f, creditLimit: e.target.value }))}
+                className="input-field" />
+            </div>
+            <div>
+              <label className="text-cu-subtext text-xs mb-1 block">Tgl Jatuh Tempo</label>
+              <input type="number" min="1" max="31"
+                value={editForm.dueDate}
+                onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))}
+                className="input-field" />
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-3 mt-6">
+        <button onClick={() => { setEditAcc(null); setEditForm(null) }}
+          className="btn-secondary flex-1">Batal</button>
+        <button onClick={handleEdit}
+          className="btn-primary flex-1">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+)}
+    </>
   )
 }

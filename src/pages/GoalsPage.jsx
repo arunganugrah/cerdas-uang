@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../stores/useStore'
 import { formatRupiah, formatDate } from '../utils/nlp'
-import { Plus, X, Target, Trophy, Clock, TrendingUp } from 'lucide-react'
+import { Plus, X, Target, Trophy, Clock, TrendingUp, Edit3, Trash2 } from 'lucide-react'
 import { differenceInDays, addDays, format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -10,9 +10,11 @@ const GOAL_ICONS = ['🎯','🏠','🚗','✈️','💻','📱','🎓','💍','�
 const GOAL_COLORS = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ef4444','#ec4899','#14b8a6']
 
 export default function GoalsPage() {
-  const { goals, addGoal, depositToGoal } = useStore()
+  const { goals, addGoal, depositToGoal, updateGoal, deleteGoal } = useStore()
   const [showAdd, setShowAdd] = useState(false)
   const [depositGoal, setDepositGoal] = useState(null)
+  const [editGoal, setEditGoal] = useState(null)
+  const [editForm, setEditForm] = useState(null)
   const [depositAmount, setDepositAmount] = useState('')
   const [depositNote, setDepositNote] = useState('')
   const [form, setForm] = useState({ name: '', target: '', deadline: '', icon: '🎯', color: '#10b981', note: '' })
@@ -26,6 +28,26 @@ export default function GoalsPage() {
     toast.success('Goal berhasil ditambahkan! 🎯')
     setShowAdd(false)
     setForm({ name: '', target: '', deadline: '', icon: '🎯', color: '#10b981', note: '' })
+  }
+  const handleEditGoal = async () => {
+    if (!editForm.name || !editForm.target) return toast.error('Lengkapi nama dan target')
+    await updateGoal(editGoal.id, {
+      name: editForm.name,
+      target: Number(editForm.target),
+      deadline: editForm.deadline,
+      icon: editForm.icon,
+      color: editForm.color,
+      note: editForm.note
+    })
+    toast.success('Goal berhasil diperbarui!')
+    setEditGoal(null)
+    setEditForm(null)
+  }
+
+  const handleDeleteGoal = async (goal) => {
+    if (!confirm(`Hapus goal "${goal.name}"? Semua riwayat deposit juga akan dihapus.`)) return
+    await deleteGoal(goal.id)
+    toast.success(`Goal "${goal.name}" dihapus`)
   }
 
   const handleDeposit = async () => {
@@ -130,13 +152,26 @@ export default function GoalsPage() {
 
         {/* Action */}
         {!goal.isCompleted && (
-          <button
-            onClick={() => setDepositGoal(goal)}
-            className="w-full btn-primary py-2.5 text-sm"
-            style={{ backgroundColor: goal.color || undefined }}
-          >
-            + Tambah Tabungan
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => setDepositGoal(goal)}
+              className="w-full btn-primary py-2.5 text-sm"
+              style={{ backgroundColor: goal.color || undefined }}>
+              + Tambah Tabungan
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setEditGoal(goal); setEditForm({ name: goal.name, target: String(goal.target), deadline: goal.deadline || '', icon: goal.icon || '🎯', color: goal.color || '#10b981', note: goal.note || '' }) }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-blue-500 bg-blue-50 hover:bg-blue-100 transition-all">
+                <Edit3 size={13} /> Edit Goal
+              </button>
+              <button
+                onClick={() => handleDeleteGoal(goal)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-rose-500 bg-rose-50 hover:bg-rose-100 transition-all">
+                <Trash2 size={13} /> Hapus
+              </button>
+            </div>
+          </div>
         )}
       </div>
     )
@@ -271,6 +306,77 @@ export default function GoalsPage() {
           </div>
         </div>
       )}
+      {/* Edit Goal Modal */}
+        {editGoal && editForm && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => { setEditGoal(null); setEditForm(null) }} />
+            <div className="relative w-full max-w-lg bg-cu-surface rounded-t-3xl border border-cu-border p-6 max-h-[90vh] overflow-y-auto animate-slide-up">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-semibold text-cu-text text-lg">Edit Goal</h3>
+                <button onClick={() => { setEditGoal(null); setEditForm(null) }}>
+                  <X size={18} className="text-cu-muted" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-cu-subtext text-xs mb-2 block">Ikon</label>
+                  <div className="flex flex-wrap gap-2">
+                    {GOAL_ICONS.map(ic => (
+                      <button key={ic}
+                        onClick={() => setEditForm(f => ({ ...f, icon: ic }))}
+                        className={`w-10 h-10 rounded-xl text-xl transition-all ${editForm.icon===ic ? 'bg-emerald-500/20 border-2 border-emerald-500' : 'bg-cu-bg hover:bg-cu-border'}`}>
+                        {ic}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-cu-subtext text-xs mb-1 block">Nama Goal *</label>
+                  <input value={editForm.name}
+                    onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                    className="input-field" autoFocus />
+                </div>
+                <div>
+                  <label className="text-cu-subtext text-xs mb-1 block">Target (Rp) *</label>
+                  <input type="number" value={editForm.target}
+                    onChange={e => setEditForm(f => ({ ...f, target: e.target.value }))}
+                    className="input-field" />
+                </div>
+                <div>
+                  <label className="text-cu-subtext text-xs mb-1 block">Deadline</label>
+                  <input type="date" value={editForm.deadline}
+                    onChange={e => setEditForm(f => ({ ...f, deadline: e.target.value }))}
+                    className="input-field" />
+                </div>
+                <div>
+                  <label className="text-cu-subtext text-xs mb-2 block">Warna</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {GOAL_COLORS.map(c => (
+                      <button key={c}
+                        onClick={() => setEditForm(f => ({ ...f, color: c }))}
+                        className={`w-8 h-8 rounded-full transition-all ${editForm.color===c ? 'ring-2 ring-offset-2 ring-offset-cu-surface ring-emerald-500 scale-110' : ''}`}
+                        style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-cu-subtext text-xs mb-1 block">Catatan</label>
+                  <input value={editForm.note}
+                    onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))}
+                    placeholder="Kenapa goal ini penting?"
+                    className="input-field" />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button onClick={() => { setEditGoal(null); setEditForm(null) }}
+                  className="btn-secondary flex-1">Batal</button>
+                <button onClick={handleEditGoal}
+                  className="btn-primary flex-1">Simpan Perubahan</button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   )
 }

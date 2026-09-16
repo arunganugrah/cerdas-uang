@@ -39,9 +39,14 @@ function App() {
 
   // Apply theme
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    document.documentElement.classList.toggle('light', theme === 'light')
-  }, [theme])
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark')
+    document.documentElement.classList.remove('light')
+  } else {
+    document.documentElement.classList.remove('dark')
+    document.documentElement.classList.add('light')
+  }
+}, [theme])
 
   // Online/offline sync
   useEffect(() => {
